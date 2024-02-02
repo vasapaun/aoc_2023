@@ -4,6 +4,6 @@ Challenges taken from Advent of Code (year: 2023) written mainly in C
 
 https://adventofcode.com/
 
-/**** Usage: ****/
+## Usage: 
     - Compile each .c with gcc (no flags needed)
     - ./a.out path-to-input-file
