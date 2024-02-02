@@ -15,13 +15,30 @@
 
 int main(int argc, char **argv)
 {
-    int times[4] = {54, 70, 82, 75}, distances[4] = {239, 1142, 1295, 1253}, count[4] = {0, 0, 0, 0};
+    check_error(argc == 2, "argc");
+
+    int* times = (int*) malloc(4 * sizeof(int));
+    int* distances = (int*) malloc(4 * sizeof(int));
+    int* count = (int*) malloc(4 * sizeof(int));
+    char* throwaway = (char*) malloc(20 * sizeof(char));
+    check_error(times != NULL && distances != NULL && count != NULL && throwaway != NULL, "malloc");
+     
+    FILE* input = fopen(argv[1], "r");
+    fscanf(input, "%s", throwaway); // Ignore text at the beginning of the line
+    for(int i = 0; i < 4; i++)  fscanf(input, "%d", &times[i]);
+    fscanf(input, "%s", throwaway); // Ignore text at the beginning of the line
+    for(int i = 0; i < 4; i++)  fscanf(input, "%d", &distances[i]);
+    fclose(input);
+    free(throwaway);
 
     for(int i = 0; i < 4; i++)
         for(int j = 1; j < times[i]; j++)
             if((j * (times[i] - j)) > distances[i]) count[i]++;
 
-    printf("%ld\n", count[0] * count[1] * count[2] * count[3]);
+    printf("%d\n", count[0] * count[1] * count[2] * count[3]);
 
+    free(times);
+    free(distances);
+    free(count);
     return 0;
 }

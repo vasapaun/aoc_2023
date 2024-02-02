@@ -16,10 +16,34 @@
 
 int main(int argc, char **argv)
 {
-    uint64_t time = 54708275, distance = 239114212951253, count = 0;
+    check_error(argc == 2, "argc");
 
-    for(int j = 1; j < time; j++)
-        if((j * (time - j)) > distance) count++;
+    int* times = (int*) malloc(4 * sizeof(int));
+    int* distances = (int*) malloc(4 * sizeof(int));
+    char* throwaway = (char*) malloc(20 * sizeof(char));
+    check_error(times != NULL && distances != NULL && throwaway != NULL, "malloc");
+     
+    FILE* input = fopen(argv[1], "r");
+    fscanf(input, "%s", throwaway); // Ignore text at the beginning of the line
+    for(int i = 0; i < 4; i++)  fscanf(input, "%d", &times[i]);
+    fscanf(input, "%s", throwaway); // Ignore text at the beginning of the line
+    for(int i = 0; i < 4; i++)  fscanf(input, "%d", &distances[i]);
+    fclose(input);
+
+    uint64_t time, distance, count;
+
+    sprintf(throwaway, "%d%d%d%d", times[0], times[1], times[2], times[3]);
+    free(times);
+    time = atoll(throwaway);
+
+    sprintf(throwaway, "%d%d%d%d", distances[0], distances[1], distances[2], distances[3]);
+    free(distances);
+    distance = atoll(throwaway);
+   
+    free(throwaway);
+
+    for(int i = 1; i < time; i++)
+        if((i * (time - i)) > distance) count++;
 
     printf("%ld\n", count);
 
