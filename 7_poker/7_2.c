@@ -28,18 +28,8 @@ int main(int argc, char **argv)
     check_error(argc == 2, "./poker path-to-input-file.txt");    
 
     // allocate needed space for all hands and bids
-    // int** hands = (int**) malloc(NUM_OF_HANDS * sizeof(int*));
-    // check_error(hands != NULL, "malloc");
-    // for(int i = 0; i < NUM_OF_HANDS; i++){
-    //     hands[i] = (int*) malloc(CARDS_IN_HAND * sizeof(int));
-    //     check_error(hands[i] != NULL, "malloc");
-    //     if(i > 0) printf("hands[%d] address: %p, distance from last address: %d\n", i, hands[i], hands[i] - hands[i - 1]);
-    // }
     int hands[NUM_OF_HANDS][CARDS_IN_HAND + 1];
 
-    // int* bids = (int*) malloc(NUM_OF_HANDS * sizeof(int));
-    // check_error(bids != NULL, "malloc");
-    
     // read from input file and store into hands matrix and bids array
     FILE* input = fopen(argv[1], "r");
     char* tmp = (char*) malloc(CARDS_IN_HAND * sizeof(char));
@@ -52,26 +42,13 @@ int main(int argc, char **argv)
     fclose(input);
     free(tmp);
 
-    //TODO: sort main matrix of hands by type and number. Later, calculate the winnings based off the ranks.
+    // sort main matrix of hands by type and number. Later, calculate the winnings based off the ranks.
     qsort(hands, NUM_OF_HANDS, (CARDS_IN_HAND + 1) * sizeof(int), compare_two_hands);
 
     int winnings = 0;
-
-    for(int i = 0; i < NUM_OF_HANDS; i++)
-    {
-        print_arr(hands[i], CARDS_IN_HAND + 1);
-        winnings += ((1000-i) * hands[i][5]);
-        printf(" type: %d winning: %d * %d = %u, winnings: %d\n", type_of_hand(hands[i]), 1000 - i, hands[i][5], (1000 - i) * hands[i][5], winnings);
-    }
-
+    for(int i = 0; i < NUM_OF_HANDS; i++)   winnings += ((1000-i) * hands[i][5]);
     printf("%d\n", winnings);
 
-
-    
-
-
-    // for(int i = 0; i < NUM_OF_HANDS; i++)   free(hands[i]);
-    // free(hands);
     return 0;
 }
 
@@ -120,8 +97,8 @@ void process_hand(const char* str, int* arr)
     for(int i = 0; i < CARDS_IN_HAND; i++)
     {
         if(isdigit(str[i]))         arr[i] = str[i] - '0';
+        else if(str[i] == 'J')      arr[i] = 1; // joker card
         else if(str[i] == 'T')      arr[i] = 10;
-        else if(str[i] == 'J')      arr[i] = 11;
         else if(str[i] == 'Q')      arr[i] = 12;
         else if(str[i] == 'K')      arr[i] = 13;
         else if(str[i] == 'A')      arr[i] = 14;
@@ -135,9 +112,15 @@ int type_of_hand(const int* hand)
     int* cards = calloc(13, sizeof(int));
     check_error(cards != NULL, "calloc");
 
-    for(int i = 0; i < CARDS_IN_HAND; i++)  cards[hand[i] - 1]++;
+    int num_of_jokers = 0;
+    for(int i = 0; i < CARDS_IN_HAND; i++)
+    {
+        if(hand[i] != 1)    cards[hand[i] - 1]++;
+        else                num_of_jokers++;
+    }
 
     qsort(cards, 14, sizeof(int), compare_two_numbers);
+    cards[0] += num_of_jokers; // count all the jokers as the most frequent card in the deck
 
     if(cards[0] == 5)                   return 7;
     if(cards[0] == 4)                   return 6;
