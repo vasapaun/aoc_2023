@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdint.h>
 
 #define check_error(cond, msg)\
     do\
@@ -19,6 +20,7 @@
 void print_arr              (const int* arr, int size);
 void print_matrix           (const int** matrix, int height, int width);
 int  compare_two_numbers    (const void* num1, const void* num2);
+int compare_two_hands       (const void* hand1, const void* hand2);
 void process_hand           (const char* str, int* arr);
 int  type_of_hand           (const int* hand);
 
@@ -27,15 +29,17 @@ int main(int argc, char **argv)
     check_error(argc == 2, "./poker path-to-input-file.txt");    
 
     // allocate needed space for all hands and bids
-    int** hands = (int**) malloc(NUM_OF_HANDS * sizeof(int*));
-    check_error(hands != NULL, "malloc");
-    for(int i = 0; i < NUM_OF_HANDS; i++){
-        hands[i] = (int*) malloc(CARDS_IN_HAND * sizeof(int));
-        check_error(hands[i] != NULL, "malloc");
-    }
+    // int** hands = (int**) malloc(NUM_OF_HANDS * sizeof(int*));
+    // check_error(hands != NULL, "malloc");
+    // for(int i = 0; i < NUM_OF_HANDS; i++){
+    //     hands[i] = (int*) malloc(CARDS_IN_HAND * sizeof(int));
+    //     check_error(hands[i] != NULL, "malloc");
+    //     if(i > 0) printf("hands[%d] address: %p, distance from last address: %d\n", i, hands[i], hands[i] - hands[i - 1]);
+    // }
+    int hands[NUM_OF_HANDS][CARDS_IN_HAND + 1];
 
-    int* bids = (int*) malloc(NUM_OF_HANDS * sizeof(int));
-    check_error(bids != NULL, "malloc");
+    // int* bids = (int*) malloc(NUM_OF_HANDS * sizeof(int));
+    // check_error(bids != NULL, "malloc");
     
     // read from input file and store into hands matrix and bids array
     FILE* input = fopen(argv[1], "r");
@@ -43,23 +47,32 @@ int main(int argc, char **argv)
     check_error(input != NULL && tmp != NULL, "");
     for(int i = 0; i < NUM_OF_HANDS; i++)
     {
-        fscanf(input, "%s %d", tmp, &bids[i]);
+        fscanf(input, "%s %d", tmp, &hands[i][5]);
         process_hand(tmp, hands[i]);
-        printf("%d: ", i + 1);
-        print_arr(hands[i], CARDS_IN_HAND);
-        puts("\n");
-        // TODO: print types of hands.
-
     }
     fclose(input);
     free(tmp);
 
     //TODO: sort main matrix of hands by type and number. Later, calculate the winnings based off the ranks.
+    qsort(hands, NUM_OF_HANDS, (CARDS_IN_HAND + 1) * sizeof(int), compare_two_hands);
+
+    int winnings = 0;
+
+    for(int i = 0; i < NUM_OF_HANDS; i++)
+    {
+        print_arr(hands[i], CARDS_IN_HAND + 1);
+        winnings += ((1000-i) * hands[i][5]);
+        printf(" type: %d winning: %d * %d = %u, winnings: %d\n", type_of_hand(hands[i]), 1000 - i, hands[i][5], (1000 - i) * hands[i][5], winnings);
+    }
+
+    printf("%d\n", winnings);
 
 
+    
 
-    for(int i = 0; i < NUM_OF_HANDS; i++)   free(hands[i]);
-    free(hands);
+
+    // for(int i = 0; i < NUM_OF_HANDS; i++)   free(hands[i]);
+    // free(hands);
     return 0;
 }
 
@@ -81,8 +94,26 @@ void print_matrix(const int** matrix, int height, int width)
     return;
 }
 
-int  compare_two_numbers(const void* num1, const void* num2) { // in descending order
+int  compare_two_numbers(const void* num1, const void* num2)
+{ // in descending order
     return *((int*)num2) - *((int*)num1); 
+}
+
+int compare_two_hands       (const void* hand1, const void* hand2)
+{ // in descending order
+    int type_difference = type_of_hand((int*)hand2) - type_of_hand((int*)hand1);
+    if(type_difference != 0) return type_difference;
+
+    // if hands are of the same type, return whichever one has the stronger individual cards
+    int card_difference;
+    for(int i = 0; i < CARDS_IN_HAND; i++){
+        card_difference = ((int*)hand2)[i] - ((int*)hand1)[i];
+        if(card_difference != 0) return card_difference;
+    }
+
+    // if all cards are the same, their order in the matrix doesnt matter
+    return 0;
+
 }
 
 void process_hand(const char* str, int* arr)
@@ -90,11 +121,11 @@ void process_hand(const char* str, int* arr)
     for(int i = 0; i < CARDS_IN_HAND; i++)
     {
         if(isdigit(str[i]))         arr[i] = str[i] - '0';
-        else if(str[i] == 'A')      arr[i] = 1;
         else if(str[i] == 'T')      arr[i] = 10;
         else if(str[i] == 'J')      arr[i] = 11;
         else if(str[i] == 'Q')      arr[i] = 12;
         else if(str[i] == 'K')      arr[i] = 13;
+        else if(str[i] == 'A')      arr[i] = 14;
     }
 
     return;
@@ -107,7 +138,7 @@ int type_of_hand(const int* hand)
 
     for(int i = 0; i < CARDS_IN_HAND; i++)  cards[hand[i] - 1]++;
 
-    qsort(cards, 13, sizeof(int), compare_two_numbers);
+    qsort(cards, 14, sizeof(int), compare_two_numbers);
 
     if(cards[0] == 5)                   return 7;
     if(cards[0] == 4)                   return 6;
