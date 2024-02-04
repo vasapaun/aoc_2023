@@ -17,7 +17,8 @@
 #define LR_LENGTH   (307)
 #define MAP_LENGTH  (714)
 
-int find_key(const char* needle, char** haystack, int haystack_size);
+int  find_key            (const char* needle, char** haystack, int haystack_size);
+bool check_locations     (const int* locations, int num_of_locations, char** haystack, int haystack_size);
 
 int main(int argc, char **argv)
 {
@@ -55,23 +56,32 @@ int main(int argc, char **argv)
 
         fscanf(input, "%s", tmp);
         for(int j = 0; j < 3; j++) map_rvalues[i][j] = tmp[j];
-        printf("%s %s %s\n", map_keys[i], map_lvalues[i], map_rvalues[i]);
     }
 
     free(tmp);
     fclose(input);
+   
+    int* locations = (int*) malloc(MAP_LENGTH * sizeof(int));
+    check_error(locations != NULL, "malloc");
 
-    int lr_index = 0, location = find_key("AAA", map_keys, MAP_LENGTH), count = 0;
-    while(strcmp(map_keys[location], "ZZZ") != 0){
+    int num_of_locations = 0;
+    for(int i = 0; i < MAP_LENGTH; i++) if(map_keys[i][2] == 'A')   locations[num_of_locations++] = i;
+    
+    int lr_index = 0, count = 0;
+    while(check_locations(locations, num_of_locations, map_keys, MAP_LENGTH) == false){
         lr_index %= 307; // loop LR instrunctions
 
-        location = (lr_instructions[lr_index] == 'L') ? find_key(map_lvalues[location], map_keys, MAP_LENGTH) : find_key(map_rvalues[location], map_keys, MAP_LENGTH);
-        check_error(location != -1, "find_key");
+        for(int i = 0; i < num_of_locations; i++)
+        {
+            if(lr_instructions[lr_index] == 'L')
+                locations[i] = find_key(map_lvalues[locations[i]], map_keys, MAP_LENGTH);
+            else
+                locations[i] = find_key(map_rvalues[locations[i]], map_keys, MAP_LENGTH);
+        }
+
         lr_index++;
         count++;
     }
-
-    printf("Steps needed: %d\n", count);
 
     // Free allocated memory
     for(int i = 0; i < MAP_LENGTH; i++)
@@ -83,9 +93,14 @@ int main(int argc, char **argv)
     free(map_keys);
     free(map_lvalues);
     free(map_rvalues);
+    free(lr_instructions);
+    free(locations);
+
+    printf("Steps needed: %d\n", count);
 
     return 0;
 }
+
 
 // Functions
 
@@ -102,4 +117,14 @@ int find_key(const char* needle, char** haystack, int haystack_size)
     }
 
     return -1;
+}
+
+bool check_locations(const int* locations, int num_of_locations, char** haystack, int haystack_size)
+{
+    for(int i = 0; i < num_of_locations; i++)
+    {
+        if(haystack[locations[i]][2] != 'Z')    return false;
+    }
+
+    return true;
 }
